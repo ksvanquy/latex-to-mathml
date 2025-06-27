@@ -1,0 +1,37 @@
+{
+  "name": "zeditor",
+  "version": "1.0.0",
+  "description": "A simple Hello World package",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "clean": "rimraf dist",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "keywords": [
+    "hello-world",
+    "typescript",
+    "package"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0",
+    "rimraf": "^5.0.0",
+    "@types/node": "^20.0.0"
+  }
+}
