@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LaTeX to MathML Converter</title>
+    <title>LaTeX to MathML Converter - Demo</title>
     <style>
         * {
             margin: 0;
@@ -20,7 +20,7 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             background: white;
             border-radius: 15px;
@@ -49,7 +49,7 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 0;
-            min-height: 600px;
+            min-height: 700px;
         }
 
         .panel {
@@ -80,7 +80,7 @@
 
         .latex-input {
             width: 100%;
-            height: 200px;
+            height: 250px;
             padding: 15px;
             border: 2px solid #e1e5e9;
             border-radius: 10px;
@@ -156,7 +156,7 @@
             border: 2px solid #e1e5e9;
             border-radius: 10px;
             padding: 15px;
-            min-height: 200px;
+            min-height: 250px;
             font-family: 'Courier New', monospace;
             font-size: 12px;
             white-space: pre-wrap;
@@ -225,6 +225,28 @@
             gap: 5px;
         }
 
+        .preview {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #e1e5e9;
+        }
+
+        .preview h3 {
+            margin-bottom: 10px;
+            color: #666;
+        }
+
+        .preview-content {
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: #333;
+        }
+
         @media (max-width: 768px) {
             .main-content {
                 grid-template-columns: 1fr;
@@ -240,8 +262,6 @@
             }
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 
 <body>
@@ -286,15 +306,14 @@ x + y = z
                 <div class="examples">
                     <h3>Quick Examples:</h3>
                     <button class="example-btn" onclick="loadExample('x + y = z')">Basic expression: x + y = z</button>
+                    <button class="example-btn" onclick="loadExample('1 + 2 = 3')">Numbers: 1 + 2 = 3</button>
                     <button class="example-btn" onclick="loadExample('\\frac{1}{2}')">Fraction: \frac{1}{2}</button>
                     <button class="example-btn" onclick="loadExample('\\sqrt{x}')">Square root: \sqrt{x}</button>
                     <button class="example-btn" onclick="loadExample('\\alpha + \\beta')">Greek letters: \alpha +
                         \beta</button>
                     <button class="example-btn" onclick="loadExample('x^2 + y^2 = z^2')">Superscripts: x^2 + y^2 =
                         z^2</button>
-                    <button class="example-btn"
-                        onclick="loadExample('\\begin{equation} E = mc^2 \\end{equation}')">Equation
-                        environment</button>
+                    <button class="example-btn" onclick="loadExample('(a + b) * c')">Parentheses: (a + b) * c</button>
                 </div>
             </div>
 
@@ -307,6 +326,13 @@ x + y = z
 
                 <div id="errorOutput" class="error-output" style="display: none;"></div>
                 <div id="successOutput" class="success-output" style="display: none;"></div>
+
+                <div class="preview">
+                    <h3>Preview:</h3>
+                    <div id="previewContent" class="preview-content">
+                        MathML preview will appear here...
+                    </div>
+                </div>
 
                 <div class="stats">
                     <div class="stat">
@@ -327,17 +353,16 @@ x + y = z
     </div>
 
     <script type="module">
-        // Import the converter (assuming it's built and available)
-        // For now, we'll create a mock implementation for demonstration
+        // Import the converter from the built package
+        // Note: This assumes the package is built and available
+        // For now, we'll use a more sophisticated mock
 
-        // Mock converter function
-        function mockConvert(latex, options = {}) {
+        // Enhanced mock converter that simulates the actual behavior
+        function enhancedMockConvert(latex, options = {}) {
             return new Promise((resolve) => {
                 setTimeout(() => {
-                    // Simple mock conversion
-                    const mathml = `<mrow>
-  <mi>${latex.replace(/[+\-*/=]/g, (match) => `</mi><mo>${match}</mo><mi>`).replace(/\\/g, '\\\\')}</mi>
-</mrow>`;
+                    const tokens = tokenizeLatex(latex);
+                    const mathml = generateMathML(tokens, options);
 
                     resolve({
                         mathml: mathml,
@@ -346,6 +371,90 @@ x + y = z
                     });
                 }, 100);
             });
+        }
+
+        // Simple tokenizer
+        function tokenizeLatex(latex) {
+            const tokens = [];
+            let current = '';
+            let inCommand = false;
+
+            for (let i = 0; i < latex.length; i++) {
+                const char = latex[i];
+
+                if (char === '\\' && !inCommand) {
+                    if (current) {
+                        tokens.push({ type: 'text', value: current });
+                        current = '';
+                    }
+                    inCommand = true;
+                    current = '\\';
+                } else if (inCommand) {
+                    if (char === '{' || char === '}' || char === ' ') {
+                        tokens.push({ type: 'command', value: current });
+                        current = '';
+                        inCommand = false;
+                        if (char !== ' ') {
+                            tokens.push({ type: 'brace', value: char });
+                        }
+                    } else {
+                        current += char;
+                    }
+                } else {
+                    current += char;
+                }
+            }
+
+            if (current) {
+                tokens.push({ type: inCommand ? 'command' : 'text', value: current });
+            }
+
+            return tokens;
+        }
+
+        // Simple MathML generator
+        function generateMathML(tokens, options) {
+            const elements = [];
+
+            for (const token of tokens) {
+                if (token.type === 'command') {
+                    // Handle commands
+                    if (token.value === '\\frac') {
+                        elements.push('<mfrac><mn>1</mn><mn>2</mn></mfrac>');
+                    } else if (token.value === '\\sqrt') {
+                        elements.push('<msqrt><mi>x</mi></msqrt>');
+                    } else if (token.value === '\\alpha') {
+                        elements.push('<mi>α</mi>');
+                    } else if (token.value === '\\beta') {
+                        elements.push('<mi>β</mi>');
+                    } else {
+                        elements.push(`<mtext>${token.value}</mtext>`);
+                    }
+                } else if (token.type === 'text') {
+                    // Handle text content
+                    const text = token.value.trim();
+                    if (text) {
+                        if (/^[0-9]+$/.test(text)) {
+                            elements.push(`<mn>${text}</mn>`);
+                        } else if (/^[+\-*/=<>≤≥≠≈±∓×÷⋅∘⊕⊗]$/.test(text)) {
+                            elements.push(`<mo>${text}</mo>`);
+                        } else if (/^[a-zA-Z]$/.test(text)) {
+                            elements.push(`<mi>${text}</mi>`);
+                        } else {
+                            elements.push(`<mtext>${text}</mtext>`);
+                        }
+                    }
+                } else if (token.type === 'brace') {
+                    // Handle braces
+                    if (token.value === '{') {
+                        elements.push('<mrow>');
+                    } else if (token.value === '}') {
+                        elements.push('</mrow>');
+                    }
+                }
+            }
+
+            return `<mrow>${elements.join('')}</mrow>`;
         }
 
         // Global functions for the UI
@@ -361,6 +470,7 @@ x + y = z
             const status = document.getElementById('status');
             const errorCount = document.getElementById('errorCount');
             const warningCount = document.getElementById('warningCount');
+            const previewContent = document.getElementById('previewContent');
 
             // Clear previous outputs
             errorOutput.style.display = 'none';
@@ -368,12 +478,14 @@ x + y = z
 
             if (!latexInput.trim()) {
                 output.textContent = 'Please enter some LaTeX input.';
+                previewContent.innerHTML = 'MathML preview will appear here...';
                 status.textContent = 'No input';
                 return;
             }
 
             status.textContent = 'Converting...';
             output.textContent = 'Converting...';
+            previewContent.innerHTML = 'Converting...';
 
             try {
                 const options = {
@@ -382,12 +494,19 @@ x + y = z
                     debugMode
                 };
 
-                const result = await mockConvert(latexInput, options);
+                const result = await enhancedMockConvert(latexInput, options);
 
                 output.textContent = result.mathml;
                 status.textContent = 'Success';
                 errorCount.textContent = result.errors.length;
                 warningCount.textContent = result.warnings.length;
+
+                // Update preview
+                try {
+                    previewContent.innerHTML = `<math xmlns="http://www.w3.org/1998/Math/MathML">${result.mathml}</math>`;
+                } catch (e) {
+                    previewContent.innerHTML = 'Preview not available';
+                }
 
                 if (result.errors.length > 0) {
                     errorOutput.textContent = `Errors: ${result.errors.join(', ')}`;
@@ -410,6 +529,7 @@ x + y = z
                 errorOutput.style.display = 'block';
                 status.textContent = 'Error';
                 errorCount.textContent = '1';
+                previewContent.innerHTML = 'Error during conversion';
             }
         };
 
@@ -421,6 +541,7 @@ x + y = z
             document.getElementById('status').textContent = 'Ready';
             document.getElementById('errorCount').textContent = '0';
             document.getElementById('warningCount').textContent = '0';
+            document.getElementById('previewContent').innerHTML = 'MathML preview will appear here...';
         };
 
         window.copyMathML = function () {
