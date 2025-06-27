@@ -1,9 +1,10 @@
-import { Token, TokenType } from '../types';
-
 /**
- * LaTeX Lexer - converts LaTeX string into tokens
+ * LaTeX Lexer - Tokenizes LaTeX input into tokens
  */
-export class LatexLexer {
+
+import { LaTeXToken } from '../core/types';
+
+export class LaTeXLexer {
   private input: string;
   private position: number;
   private line: number;
@@ -17,132 +18,61 @@ export class LatexLexer {
   }
 
   /**
-   * Tokenize the entire input
+   * Tokenize the entire input string
    */
-  public tokenize(): Token[] {
-    const tokens: Token[] = [];
+  public tokenize(): LaTeXToken[] {
+    const tokens: LaTeXToken[] = [];
     
     while (this.position < this.input.length) {
       const token = this.nextToken();
-      if (token.type !== TokenType.WHITESPACE) {
+      if (token) {
         tokens.push(token);
       }
     }
-    
-    tokens.push({
-      type: TokenType.EOF,
-      value: '',
-      position: this.position,
-      line: this.line,
-      column: this.column,
-    });
     
     return tokens;
   }
 
   /**
-   * Get the next token
+   * Get the next token from the input
    */
-  private nextToken(): Token {
+  private nextToken(): LaTeXToken | null {
     this.skipWhitespace();
     
     if (this.position >= this.input.length) {
-      return {
-        type: TokenType.EOF,
-        value: '',
-        position: this.position,
-        line: this.line,
-        column: this.column,
-      };
+      return null;
     }
 
     const char = this.input[this.position];
-    const startPosition = this.position;
-    const startLine = this.line;
-    const startColumn = this.column;
 
     // Handle backslash commands
     if (char === '\\') {
-      return this.readCommand();
+      return this.tokenizeCommand();
     }
 
     // Handle braces
-    if (char === '{') {
-      this.advance();
-      return {
-        type: TokenType.LEFT_BRACE,
-        value: '{',
-        position: startPosition,
-        line: startLine,
-        column: startColumn,
-      };
+    if (char === '{' || char === '}') {
+      return this.tokenizeBrace();
     }
 
-    if (char === '}') {
-      this.advance();
-      return {
-        type: TokenType.RIGHT_BRACE,
-        value: '}',
-        position: startPosition,
-        line: startLine,
-        column: startColumn,
-      };
-    }
-
-    // Handle superscript
-    if (char === '^') {
-      this.advance();
-      return {
-        type: TokenType.SUPERSCRIPT,
-        value: '^',
-        position: startPosition,
-        line: startLine,
-        column: startColumn,
-      };
-    }
-
-    // Handle subscript
-    if (char === '_') {
-      this.advance();
-      return {
-        type: TokenType.SUBSCRIPT,
-        value: '_',
-        position: startPosition,
-        line: startLine,
-        column: startColumn,
-      };
+    // Handle brackets
+    if (char === '[' || char === ']') {
+      return this.tokenizeBracket();
     }
 
     // Handle numbers
     if (this.isDigit(char)) {
-      return this.readNumber();
+      return this.tokenizeNumber();
     }
 
-    // Handle operators
-    if (this.isOperator(char)) {
-      return this.readOperator();
-    }
-
-    // Handle identifiers (variables, functions)
-    if (this.isLetter(char)) {
-      return this.readIdentifier();
-    }
-
-    // Handle unknown characters as identifiers
-    this.advance();
-    return {
-      type: TokenType.IDENTIFIER,
-      value: char,
-      position: startPosition,
-      line: startLine,
-      column: startColumn,
-    };
+    // Handle symbols and text
+    return this.tokenizeSymbol();
   }
 
   /**
-   * Read a LaTeX command (starts with backslash)
+   * Tokenize a LaTeX command (starts with backslash)
    */
-  private readCommand(): Token {
+  private tokenizeCommand(): LaTeXToken {
     const startPosition = this.position;
     const startLine = this.line;
     const startColumn = this.column;
@@ -160,7 +90,7 @@ export class LatexLexer {
     }
     
     return {
-      type: TokenType.COMMAND,
+      type: 'command',
       value: '\\' + command,
       position: startPosition,
       line: startLine,
@@ -169,9 +99,43 @@ export class LatexLexer {
   }
 
   /**
-   * Read a number
+   * Tokenize a brace
    */
-  private readNumber(): Token {
+  private tokenizeBrace(): LaTeXToken {
+    const char = this.input[this.position];
+    const token: LaTeXToken = {
+      type: 'brace',
+      value: char,
+      position: this.position,
+      line: this.line,
+      column: this.column,
+    };
+    
+    this.advance();
+    return token;
+  }
+
+  /**
+   * Tokenize a bracket
+   */
+  private tokenizeBracket(): LaTeXToken {
+    const char = this.input[this.position];
+    const token: LaTeXToken = {
+      type: 'bracket',
+      value: char,
+      position: this.position,
+      line: this.line,
+      column: this.column,
+    };
+    
+    this.advance();
+    return token;
+  }
+
+  /**
+   * Tokenize a number
+   */
+  private tokenizeNumber(): LaTeXToken {
     const startPosition = this.position;
     const startLine = this.line;
     const startColumn = this.column;
@@ -184,18 +148,18 @@ export class LatexLexer {
       
       if (this.isDigit(char)) {
         number += char;
-        this.advance();
       } else if (char === '.' && !hasDecimal) {
         number += char;
         hasDecimal = true;
-        this.advance();
       } else {
         break;
       }
+      
+      this.advance();
     }
     
     return {
-      type: TokenType.NUMBER,
+      type: 'number',
       value: number,
       position: startPosition,
       line: startLine,
@@ -204,47 +168,19 @@ export class LatexLexer {
   }
 
   /**
-   * Read an operator
+   * Tokenize a symbol or text
    */
-  private readOperator(): Token {
+  private tokenizeSymbol(): LaTeXToken {
     const startPosition = this.position;
     const startLine = this.line;
     const startColumn = this.column;
     
-    const operator = this.input[this.position];
+    const char = this.input[this.position];
     this.advance();
     
     return {
-      type: TokenType.OPERATOR,
-      value: operator,
-      position: startPosition,
-      line: startLine,
-      column: startColumn,
-    };
-  }
-
-  /**
-   * Read an identifier
-   */
-  private readIdentifier(): Token {
-    const startPosition = this.position;
-    const startLine = this.line;
-    const startColumn = this.column;
-    
-    let identifier = '';
-    
-    while (
-      this.position < this.input.length &&
-      (this.isLetter(this.input[this.position]) ||
-        this.isDigit(this.input[this.position]))
-    ) {
-      identifier += this.input[this.position];
-      this.advance();
-    }
-    
-    return {
-      type: TokenType.IDENTIFIER,
-      value: identifier,
+      type: 'symbol',
+      value: char,
       position: startPosition,
       line: startLine,
       column: startColumn,
@@ -267,7 +203,6 @@ export class LatexLexer {
    * Advance to the next character
    */
   private advance(): void {
-    if (this.position < this.input.length) {
       if (this.input[this.position] === '\n') {
         this.line++;
         this.column = 1;
@@ -275,7 +210,6 @@ export class LatexLexer {
         this.column++;
       }
       this.position++;
-    }
   }
 
   /**
@@ -290,13 +224,6 @@ export class LatexLexer {
    */
   private isLetter(char: string): boolean {
     return /[a-zA-Z]/.test(char);
-  }
-
-  /**
-   * Check if character is an operator
-   */
-  private isOperator(char: string): boolean {
-    return /[+\-*/=<>]/.test(char);
   }
 
   /**

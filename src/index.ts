@@ -1,46 +1,96 @@
 /**
- * Simple Hello World Package
+ * LaTeX to MathML Converter
+ * A TypeScript library to convert LaTeX mathematical expressions to MathML 3.0
  */
 
-/**
- * Prints "Hello, World!" to the console
- */
-export function sayHello(): void {
-  console.log("Hello, World!");
-}
+// Core exports
+export { LaTeXConverter } from './converter/latex-converter';
+export { LaTeXParser } from './parser/parser';
+export { LaTeXLexer } from './parser/lexer';
+export { MathMLGenerator } from './generator/mathml-generator';
 
-/**
- * Returns a hello message with a custom name
- * @param name - The name to greet
- * @returns A greeting message
- */
-export function greet(name: string): string {
-  return `Hello, ${name}!`;
-}
+// Type exports
+export type {
+  LaTeXToken,
+  MathMLNode,
+  ParseContext,
+  ConversionOptions,
+  ConversionResult,
+  CommandHandler,
+  CommandRegistry,
+  EnvironmentHandler,
+  EnvironmentRegistry,
+} from './core/types';
 
-/**
- * Returns a hello message in different languages
- * @param language - The language code ('en', 'es', 'fr', 'de')
- * @param name - Optional name to include in the greeting
- * @returns A greeting message in the specified language
- */
-export function greetInLanguage(language: string, name?: string): string {
-  const greetings: Record<string, string> = {
-    en: "Hello",
-    es: "Hola",
-    fr: "Bonjour",
-    de: "Hallo",
-  };
+// Utility exports
+export { ErrorHandler } from './utils/error-handler';
+export { Validator } from './utils/validator';
 
-  const greeting = greetings[language] || greetings.en;
-  return name ? `${greeting}, ${name}!` : `${greeting}!`;
-}
+// Constants exports
+export {
+  MATHML_NAMESPACE,
+  LATEX_COMMANDS,
+  MATHML_ELEMENTS,
+  ERROR_MESSAGES,
+  WARNING_MESSAGES,
+} from './core/constants';
 
-/**
- * Default export with all functions
- */
-export default {
-  sayHello,
-  greet,
-  greetInLanguage,
-};
+// Import types for convenience functions
+import { LaTeXConverter } from './converter/latex-converter';
+import type { ConversionOptions, ConversionResult } from './core/types';
+
+// Main converter instance
+const converter = new LaTeXConverter();
+
+// Convenience functions
+export const convert = (
+  latex: string,
+  options?: ConversionOptions
+): ConversionResult => converter.convert(latex, options);
+export const convertDisplay = (
+  latex: string,
+  options?: ConversionOptions
+): ConversionResult => converter.convertDisplay(latex, options);
+export const convertInline = (
+  latex: string,
+  options?: ConversionOptions
+): ConversionResult => converter.convertInline(latex, options);
+export const convertToHTML = (
+  latex: string,
+  options?: ConversionOptions & { title?: string }
+): ConversionResult => converter.convertToHTML(latex, options);
+export const convertToSVG = (
+  latex: string,
+  options?: ConversionOptions & { width?: number; height?: number }
+): ConversionResult => converter.convertToSVG(latex, options);
+export const convertToDocument = (
+  latex: string,
+  options?: ConversionOptions
+): ConversionResult => converter.convertToDocument(latex, options);
+export const validate = (
+  latex: string
+): { isValid: boolean; errors: string[]; warnings: string[] } =>
+  converter.validate(latex);
+export const prettyPrint = (
+  latex: string,
+  options?: ConversionOptions
+): ConversionResult => converter.prettyPrint(latex, options);
+export const minify = (
+  latex: string,
+  options?: ConversionOptions
+): ConversionResult => converter.minify(latex, options);
+
+// Library information
+export const getVersion = (): string => converter.getVersion();
+export const getInfo = (): {
+  name: string;
+  version: string;
+  description: string;
+} => converter.getInfo();
+export const getSupportedCommands = (): string[] =>
+  converter.getSupportedCommands();
+export const getSupportedEnvironments = (): string[] =>
+  converter.getSupportedEnvironments();
+
+// Default export
+export default converter;
