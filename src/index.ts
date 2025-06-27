@@ -1,25 +1,46 @@
 /**
- * Simple Hello World function
- * @param name - Optional name to greet
+ * Simple Hello World Package
+ */
+
+/**
+ * Prints "Hello, World!" to the console
+ */
+export function sayHello(): void {
+  console.log("Hello, World!");
+}
+
+/**
+ * Returns a hello message with a custom name
+ * @param name - The name to greet
  * @returns A greeting message
  */
-export function hello(name?: string): string {
-  const target = name || "World";
-  return `Hello, ${target}!`;
+export function greet(name: string): string {
+  return `Hello, ${name}!`;
 }
 
 /**
- * Get current timestamp
- * @returns Current timestamp as string
+ * Returns a hello message in different languages
+ * @param language - The language code ('en', 'es', 'fr', 'de')
+ * @param name - Optional name to include in the greeting
+ * @returns A greeting message in the specified language
  */
-export function getTimestamp(): string {
-  return new Date().toISOString();
+export function greetInLanguage(language: string, name?: string): string {
+  const greetings: Record<string, string> = {
+    en: "Hello",
+    es: "Hola",
+    fr: "Bonjour",
+    de: "Hallo",
+  };
+
+  const greeting = greetings[language] || greetings.en;
+  return name ? `${greeting}, ${name}!` : `${greeting}!`;
 }
 
 /**
- * Default export with main functionality
+ * Default export with all functions
  */
 export default {
-  hello,
-  getTimestamp,
+  sayHello,
+  greet,
+  greetInLanguage,
 };
